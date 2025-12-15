@@ -1,0 +1,632 @@
+{
+	"info": {
+		"_postman_id": "autostory-api-collection",
+		"name": "AutoStory API - Vehicle Storytelling Platform",
+		"description": "Complete API testing collection for AutoStory - Immersive Technical Storytelling Platform for Vehicles",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "vehicleId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "storyId",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('authToken', response.token);",
+									"    pm.collectionVariables.set('userId', response.data._id);",
+									"    pm.environment.set('authToken', response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"user\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "register"]
+						},
+						"description": "Register a new user account"
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('authToken', response.token);",
+									"    pm.collectionVariables.set('userId', response.data._id);",
+									"    pm.environment.set('authToken', response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login with existing credentials"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "me"]
+						},
+						"description": "Get currently logged in user"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Password",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newpassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/updatepassword",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "updatepassword"]
+						},
+						"description": "Update user password"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "logout"]
+						},
+						"description": "Logout user and clear cookie"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Vehicles",
+			"item": [
+				{
+					"name": "Create Vehicle",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('vehicleId', response.data._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"make\": \"Tesla\",\n  \"model\": \"Model S Plaid\",\n  \"year\": 2024,\n  \"type\": \"electric\",\n  \"specifications\": {\n    \"engine\": {\n      \"type\": \"Tri-Motor Electric\",\n      \"horsepower\": 1020,\n      \"torque\": 1420\n    },\n    \"performance\": {\n      \"acceleration_0_100\": 2.1,\n      \"topSpeed\": 322\n    },\n    \"battery\": {\n      \"capacity\": 100,\n      \"range\": 637,\n      \"chargingTime\": {\n        \"fast\": 15,\n        \"normal\": 10\n      },\n      \"batteryType\": \"Lithium-ion\"\n    },\n    \"efficiency\": {\n      \"energyConsumption\": 18.9,\n      \"co2Emissions\": 0,\n      \"range\": 637\n    },\n    \"safety\": {\n      \"rating\": 5,\n      \"features\": [\"Automatic Emergency Braking\", \"Blind Spot Warning\", \"Lane Departure Warning\"],\n      \"airbags\": 8,\n      \"abs\": true,\n      \"esc\": true\n    },\n    \"adas\": {\n      \"features\": [\"Autopilot\", \"Full Self-Driving Capability\", \"Navigate on Autopilot\"],\n      \"adaptiveCruise\": true,\n      \"laneKeeping\": true,\n      \"autonomyLevel\": 2\n    },\n    \"transmission\": {\n      \"type\": \"Single-Speed Automatic\",\n      \"gears\": 1,\n      \"driveType\": \"AWD\"\n    },\n    \"dimensions\": {\n      \"length\": 5021,\n      \"width\": 1987,\n      \"height\": 1431,\n      \"wheelbase\": 2960,\n      \"weight\": 2162,\n      \"trunkCapacity\": 744\n    },\n    \"technology\": {\n      \"infotainmentSystem\": \"Tesla Theater\",\n      \"screenSize\": 17,\n      \"connectivity\": [\"WiFi\", \"Bluetooth\", \"LTE\"],\n      \"voiceControl\": true,\n      \"smartphoneIntegration\": true\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/vehicles",
+							"host": ["{{baseUrl}}"],
+							"path": ["vehicles"]
+						},
+						"description": "Create a new vehicle with comprehensive specifications"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Vehicles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/vehicles?select=make,model,year,type",
+							"host": ["{{baseUrl}}"],
+							"path": ["vehicles"],
+							"query": [
+								{
+									"key": "select",
+									"value": "make,model,year,type"
+								},
+								{
+									"key": "sort",
+									"value": "-year",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all vehicles with pagination and filtering"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Vehicle",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["vehicles", "{{vehicleId}}"]
+						},
+						"description": "Get a single vehicle by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Vehicle",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"specifications\": {\n    \"performance\": {\n      \"acceleration_0_100\": 2.0,\n      \"topSpeed\": 330\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["vehicles", "{{vehicleId}}"]
+						},
+						"description": "Update vehicle specifications"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Vehicle",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/vehicles/{{vehicleId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["vehicles", "{{vehicleId}}"]
+						},
+						"description": "Delete a vehicle"
+					},
+					"response": []
+				},
+				{
+					"name": "Parse Vehicle Data (JSON)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"format\": \"json\",\n  \"data\": {\n    \"manufacturer\": \"Porsche\",\n    \"model_name\": \"Taycan Turbo S\",\n    \"production_year\": 2024,\n    \"vehicle_type\": \"electric\",\n    \"motor_type\": \"Dual Motor Electric\",\n    \"power_hp\": 761,\n    \"torque_nm\": 1050,\n    \"acceleration_0_100_kmh\": 2.8,\n    \"max_speed_kmh\": 260,\n    \"battery_capacity_kwh\": 93.4,\n    \"range_km\": 467,\n    \"fast_charge_minutes\": 22.5,\n    \"length_mm\": 4963,\n    \"width_mm\": 1966,\n    \"height_mm\": 1378,\n    \"weight_kg\": 2295\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/vehicles/parse",
+							"host": ["{{baseUrl}}"],
+							"path": ["vehicles", "parse"]
+						},
+						"description": "Parse vehicle data from JSON format"
+					},
+					"response": []
+				},
+				{
+					"name": "Compare Vehicles",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"vehicleIds\": [\"{{vehicleId}}\", \"ANOTHER_VEHICLE_ID\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/vehicles/compare",
+							"host": ["{{baseUrl}}"],
+							"path": ["vehicles", "compare"]
+						},
+						"description": "Compare multiple vehicles side-by-side"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Vehicle Stories",
+			"item": [
+				{
+					"name": "Generate Story",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('storyId', response.data._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"tone\": \"professional\",\n  \"language\": \"en\",\n  \"targetAudience\": \"tech enthusiasts\",\n  \"focusAreas\": [\"performance\", \"technology\", \"innovation\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/stories/generate",
+							"host": ["{{baseUrl}}"],
+							"path": ["stories", "generate"]
+						},
+						"description": "Generate an immersive story for a vehicle using AI"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Stories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/stories?populate=vehicle,author",
+							"host": ["{{baseUrl}}"],
+							"path": ["stories"],
+							"query": [
+								{
+									"key": "populate",
+									"value": "vehicle,author"
+								},
+								{
+									"key": "status",
+									"value": "published",
+									"disabled": true
+								},
+								{
+									"key": "language",
+									"value": "en",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all vehicle stories with filtering"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Story",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/stories/{{storyId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["stories", "{{storyId}}"]
+						},
+						"description": "Get a single story with full details"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Story",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Tesla Model S Plaid: The Future of Electric Performance\",\n  \"tone\": \"enthusiastic\",\n  \"targetAudience\": \"car enthusiasts\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/stories/{{storyId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["stories", "{{storyId}}"]
+						},
+						"description": "Update story metadata and settings"
+					},
+					"response": []
+				},
+				{
+					"name": "Publish Story",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/stories/{{storyId}}/publish",
+							"host": ["{{baseUrl}}"],
+							"path": ["stories", "{{storyId}}", "publish"]
+						},
+						"description": "Publish a story (change status to published)"
+					},
+					"response": []
+				},
+				{
+					"name": "Export Story - PDF",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/stories/{{storyId}}/export/pdf",
+							"host": ["{{baseUrl}}"],
+							"path": ["stories", "{{storyId}}", "export", "pdf"]
+						},
+						"description": "Export story as PDF document"
+					},
+					"response": []
+				},
+				{
+					"name": "Export Story - HTML",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/stories/{{storyId}}/export/html",
+							"host": ["{{baseUrl}}"],
+							"path": ["stories", "{{storyId}}", "export", "html"]
+						},
+						"description": "Export story as HTML page"
+					},
+					"response": []
+				},
+				{
+					"name": "Export Story - Markdown",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/stories/{{storyId}}/export/markdown",
+							"host": ["{{baseUrl}}"],
+							"path": ["stories", "{{storyId}}", "export", "markdown"]
+						},
+						"description": "Export story as Markdown file"
+					},
+					"response": []
+				},
+				{
+					"name": "Export Story - JSON",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/stories/{{storyId}}/export/json",
+							"host": ["{{baseUrl}}"],
+							"path": ["stories", "{{storyId}}", "export", "json"]
+						},
+						"description": "Export story as JSON data"
+					},
+					"response": []
+				},
+				{
+					"name": "Export Story - Video",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/stories/{{storyId}}/export/video",
+							"host": ["{{baseUrl}}"],
+							"path": ["stories", "{{storyId}}", "export", "video"]
+						},
+						"description": "Export story as video storyboard"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Story",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/stories/{{storyId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["stories", "{{storyId}}"]
+						},
+						"description": "Delete a story"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Get All Users (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["users"]
+						},
+						"description": "Get all users (admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single User (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}"]
+						},
+						"description": "Get single user by ID (admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Name\",\n  \"role\": \"author\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}"]
+						},
+						"description": "Update user details (admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}"]
+						},
+						"description": "Delete user (admin only)"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
