@@ -1,0 +1,248 @@
+const VehicleStory = require('../models/VehicleStory');
+const Vehicle = require('../models/Vehicle');
+const User = require('../models/User');
+const ErrorResponse = require('../utils/errorResponse');
+const asyncHandler = require('../middleware/async');
+const { generateNarrative } = require('../services/narrativeEngine');
+const { generateVisuals } = require('../services/visualGenerator');
+
+// @desc    Get all vehicle stories
+// @route   GET /api/v1/vehicles
+// @access  Public
+exports.getVehicleStories = asyncHandler(async (req, res, next) => {
+  res.status(200).json(res.advancedResults);
+});
+
+// @desc    Get single vehicle story
+// @route   GET /api/v1/vehicles/:id
+// @access  Public
+exports.getVehicleStory = asyncHandler(async (req, res, next) => {
+  const vehicleStory = await VehicleStory.findById(req.params.id)
+    .populate({
+      path: 'author',
+      select: 'name email'
+    })
+    .populate({
+      path: 'reviews',
+      select: 'title text rating user'
+    });
+
+  if (!vehicleStory) {
+    return next(
+      new ErrorResponse(`Vehicle story not found with id of ${req.params.id}`, 404)
+    );
+  }
+
+  // Increment view count
+  vehicleStory.statistics.views += 1;
+  await vehicleStory.save();
+
+  res.status(200).json({
+    success: true,
+    data: vehicleStory
+  });
+});
+
+// @desc    Create vehicle story from data
+// @route   POST /api/v1/vehicles
+// @access  Private
+exports.createVehicleStory = asyncHandler(async (req, res, next) => {
+  req.body.author = req.user.id;
+  req.body.processing = {
+    status: 'draft',
+    progress: 0
+  };
+
+  const vehicleStory = await VehicleStory.create(req.body);
+
+  res.status(201).json({
+    success: true,
+    data: vehicleStory
+  });
+});
+
+// @desc    Upload and parse vehicle data
+// @route   POST /api/v1/vehicles/upload
+// @access  Private
+exports.uploadVehicleData = asyncHandler(async (req, res, next) => {
+  if (!req.files || !req.files.file) {
+    return next(new ErrorResponse('Please upload a file', 400));
+  }
+
+  const file = req.files.file;
+  const fileType = file.name.split('.').pop().toLowerCase();
+
+  let parsedData;
+  let extractionMethod;
+
+  try {
+    // Parse based on file type
+    switch (fileType) {
+      case 'json':
+        parsedData = await parseJSON(file.data);
+        extractionMethod = 'JSON parsing';
+        break;
+      case 'csv':
+        parsedData = await parseCSV(file.data);
+        extractionMethod = 'CSV parsing';
+        break;
+      case 'pdf':
+        parsedData = await parsePDF(file.data);
+        extractionMethod = 'PDF OCR + AI extraction';
+        break;
+      default:
+        return next(new ErrorResponse('Unsupported file type. Please upload JSON, CSV, or PDF', 400));
+    }
+
+    // Create vehicle story with parsed data
+    const vehicleStory = await VehicleStory.create({
+      ...parsedData,
+      author: req.user.id,
+      sourceData: {
+        type: fileType,
+        uploadedFile: file.name,
+        extractionMethod
+      },
+      processing: {
+        status: 'parsing',
+        progress: 25,
+        currentStep: 'Data extracted successfully'
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'File uploaded and parsed successfully',
+      data: vehicleStory
+    });
+
+  } catch (error) {
+    console.error('Parse error:', error);
+    return next(new ErrorResponse('Error parsing file. Please check the format.', 400));
+  }
+});
+
+// @desc    Update vehicle story
+// @route   PUT /api/v1/vehicles/:id
+// @access  Private
+exports.updateVehicleStory = asyncHandler(async (req, res, next) => {
+  let vehicleStory = await VehicleStory.findById(req.params.id);
+
+  if (!vehicleStory) {
+    return next(
+      new ErrorResponse(`Vehicle story not found with id of ${req.params.id}`, 404)
+    );
+  }
+
+  // Make sure user is owner or admin
+  if (vehicleStory.author.toString() !== req.user.id && req.user.role !== 'admin') {
+    return next(
+      new ErrorResponse(`User ${req.user.id} is not authorized to update this vehicle story`, 401)
+    );
+  }
+
+  vehicleStory = await VehicleStory.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true
+  });
+
+  res.status(200).json({
+    success: true,
+    data: vehicleStory
+  });
+});
+
+// @desc    Delete vehicle story
+// @route   DELETE /api/v1/vehicles/:id
+// @access  Private
+exports.deleteVehicleStory = asyncHandler(async (req, res, next) => {
+  const vehicleStory = await VehicleStory.findById(req.params.id);
+
+  if (!vehicleStory) {
+    return next(
+      new ErrorResponse(`Vehicle story not found with id of ${req.params.id}`, 404)
+    );
+  }
+
+  // Make sure user is owner or admin
+  if (vehicleStory.author.toString() !== req.user.id && req.user.role !== 'admin') {
+    return next(
+      new ErrorResponse(`User ${req.user.id} is not authorized to delete this vehicle story`, 401)
+    );
+  }
+
+  await vehicleStory.deleteOne();
+
+  res.status(200).json({
+    success: true,
+    data: {}
+  });
+});
+
+// @desc    Search vehicle stories
+// @route   GET /api/v1/vehicles/search/:query
+// @access  Public
+exports.searchVehicleStories = asyncHandler(async (req, res, next) => {
+  const query = req.params.query.toLowerCase();
+
+  const vehicleStories = await VehicleStory.find({
+    $or: [
+      { manufacturer: new RegExp(query, 'i') },
+      { model: new RegExp(query, 'i') },
+      { vehicleType: new RegExp(query, 'i') }
+    ],
+    isPublic: true
+  }).limit(20);
+
+  res.status(200).json({
+    success: true,
+    count: vehicleStories.length,
+    data: vehicleStories
+  });
+});
+
+// @desc    Get vehicle stories by manufacturer
+// @route   GET /api/v1/vehicles/manufacturer/:manufacturer
+// @access  Public
+exports.getVehiclesByManufacturer = asyncHandler(async (req, res, next) => {
+  const vehicleStories = await VehicleStory.find({ 
+    manufacturer: new RegExp(req.params.manufacturer, 'i'),
+    isPublic: true 
+  });
+
+  res.status(200).json({
+    success: true,
+    count: vehicleStories.length,
+    data: vehicleStories
+  });
+});
+
+// @desc    Update processing status
+// @route   PUT /api/v1/vehicles/:id/status
+// @access  Private
+exports.updateProcessingStatus = asyncHandler(async (req, res, next) => {
+  const { status, progress, currentStep, completedSteps } = req.body;
+
+  const vehicleStory = await VehicleStory.findById(req.params.id);
+
+  if (!vehicleStory) {
+    return next(
+      new ErrorResponse(`Vehicle story not found with id of ${req.params.id}`, 404)
+    );
+  }
+
+  vehicleStory.processing.status = status || vehicleStory.processing.status;
+  vehicleStory.processing.progress = progress !== undefined ? progress : vehicleStory.processing.progress;
+  vehicleStory.processing.currentStep = currentStep || vehicleStory.processing.currentStep;
+  
+  if (completedSteps) {
+    vehicleStory.processing.completedSteps = completedSteps;
+  }
+
+  await vehicleStory.save();
+
+  res.status(200).json({
+    success: true,
+    data: vehicleStory
+  });
+});
