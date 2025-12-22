@@ -1,9 +1,7 @@
-const { HfInference } = require('@huggingface/inference');
+const { generateText } = require('../services/geminiAPI');
 const VehicleStory = require('../models/VehicleStory');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
-
-const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
 // @desc    Generate narrative from vehicle technical data
 // @route   POST /api/v1/narrative/generate/:vehicleId
@@ -38,16 +36,7 @@ exports.generateNarrative = asyncHandler(async (req, res, next) => {
 
     // Generate Introduction Chapter
     const introPrompt = buildIntroPrompt(fullName, vehicleData, tone || 'professional', targetAudience || 'buyers');
-    const introResponse = await hf.textGeneration({
-      model: 'mistralai/Mistral-7B-Instruct-v0.2',
-      inputs: introPrompt,
-      parameters: {
-        max_new_tokens: 500,
-        temperature: 0.7,
-        top_p: 0.9,
-        return_full_text: false
-      }
-    });
+    const introText = await generateText(introPrompt, 500, 0.7);
 
     // Generate chapters for different aspects
     const chapters = [];
@@ -55,20 +44,11 @@ exports.generateNarrative = asyncHandler(async (req, res, next) => {
 
     for (const aspect of aspects) {
       const chapterPrompt = buildChapterPrompt(fullName, vehicleData, aspect, tone || 'professional', includeComparisons);
-      const chapterResponse = await hf.textGeneration({
-        model: 'mistralai/Mistral-7B-Instruct-v0.2',
-        inputs: chapterPrompt,
-        parameters: {
-          max_new_tokens: 600,
-          temperature: 0.7,
-          top_p: 0.9,
-          return_full_text: false
-        }
-      });
+      const chapterText = await generateText(chapterPrompt, 600, 0.7);
 
       chapters.push({
         title: getChapterTitle(aspect),
-        content: chapterResponse.generated_text.trim(),
+        content: String(chapterText).trim(),
         category: aspect,
         order: chapters.length + 1,
         keyPoints: extractKeyPoints(vehicleData, aspect)
@@ -77,25 +57,17 @@ exports.generateNarrative = asyncHandler(async (req, res, next) => {
 
     // Generate Summary
     const summaryPrompt = `Summarize the key selling points of the ${fullName} in 2-3 compelling sentences:`;
-    const summaryResponse = await hf.textGeneration({
-      model: 'mistralai/Mistral-7B-Instruct-v0.2',
-      inputs: summaryPrompt,
-      parameters: {
-        max_new_tokens: 150,
-        temperature: 0.6,
-        return_full_text: false
-      }
-    });
+    const summaryText = await generateText(summaryPrompt, 150, 0.6);
 
     // Update vehicle story with narrative
     vehicleStory.narrative = {
       introChapter: {
         title: 'Introduction',
-        content: introResponse.generated_text.trim(),
+        content: String(introText).trim(),
         tone: tone || 'professional'
       },
       chapters: chapters,
-      summary: summaryResponse.generated_text.trim(),
+      summary: String(summaryText).trim(),
       language: language || 'en'
     };
 
@@ -154,7 +126,7 @@ exports.regenerateChapter = asyncHandler(async (req, res, next) => {
     );
 
     const response = await hf.textGeneration({
-      model: 'mistralai/Mistral-7B-Instruct-v0.2',
+      model: MODEL_NAME,
       inputs: chapterPrompt,
       parameters: {
         max_new_tokens: 600,

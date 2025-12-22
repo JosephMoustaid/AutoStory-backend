@@ -1,6 +1,4 @@
-const { HfInference } = require('@huggingface/inference');
-
-const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
+const { generateText } = require('./geminiAPI');
 
 /**
  * Generate immersive narrative for vehicle specifications
@@ -16,17 +14,8 @@ exports.generateNarrative = async ({ vehicle, tone, language, chapters }) => {
     // Generate title and subtitle
     const titlePrompt = `Create a compelling marketing title for a ${vehicle.year} ${vehicle.make} ${vehicle.model}. Make it emotional and engaging. Title only:`;
     
-    const titleResponse = await hf.textGeneration({
-      model: 'mistralai/Mistral-7B-Instruct-v0.2',
-      inputs: titlePrompt,
-      parameters: {
-        max_new_tokens: 20,
-        temperature: 0.8,
-        return_full_text: false
-      }
-    });
-
-    const title = titleResponse.generated_text.trim().split('\n')[0].replace(/["']/g, '');
+    const titleText = await generateText(titlePrompt, 20).catch(err => { throw err; });
+    const title = String(titleText).trim().split('\n')[0].replace(/['"]/g, '');
 
     return {
       title,
@@ -73,25 +62,14 @@ async function generateChapter(vehicle, chapterType, tone, language) {
   const template = chapterTemplates[chapterType] || chapterTemplates.overview;
 
   try {
-    const response = await hf.textGeneration({
-      model: 'mistralai/Mistral-7B-Instruct-v0.2',
-      inputs: template.prompt + '\n\nParagraph:',
-      parameters: {
-        max_new_tokens: 300,
-        temperature: 0.7,
-        top_p: 0.9,
-        return_full_text: false
-      }
-    });
-
-    const content = response.generated_text.trim();
+    const content = await generateText(template.prompt + '\n\nParagraph:', 300);
 
     // Extract technical highlights from vehicle specs
     const technicalHighlights = extractTechnicalHighlights(vehicle, chapterType);
 
     return {
       title: template.title,
-      content,
+      content: String(content).trim(),
       order: Object.keys(chapterTemplates).indexOf(chapterType),
       technicalHighlights,
       visualType: getVisualType(chapterType)
@@ -215,20 +193,12 @@ exports.generateVariations = async (originalNarrative, count = 3) => {
     try {
       const prompt = `Rewrite this vehicle description in a ${tones[i]} tone:\n\n${originalNarrative}\n\nRewritten version:`;
       
-      const response = await hf.textGeneration({
-        model: 'mistralai/Mistral-7B-Instruct-v0.2',
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 200,
-          temperature: 0.8,
-          return_full_text: false
-        }
-      });
-
-      variations.push({
-        tone: tones[i],
-        content: response.generated_text.trim()
-      });
+      try {
+        const text = await generateText(prompt, 200);
+        variations.push({ tone: tones[i], content: String(text).trim() });
+      } catch (err) {
+        console.error(`Variation generation error for tone ${tones[i]}:`, err);
+      }
     } catch (error) {
       console.error(`Variation generation error for tone ${tones[i]}:`, error);
     }

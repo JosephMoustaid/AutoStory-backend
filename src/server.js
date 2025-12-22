@@ -1,5 +1,6 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const path = require('path');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const mongoSanitize = require('express-mongo-sanitize');
@@ -10,8 +11,8 @@ const hpp = require('hpp');
 const cors = require('cors');
 const compression = require('compression');
 
-// Load env vars
-dotenv.config();
+// Load env vars from root directory
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 // Connect to database
 const connectDB = require('./config/db');

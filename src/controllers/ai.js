@@ -1,10 +1,8 @@
-const { HfInference } = require('@huggingface/inference');
+const { generateText } = require('../services/geminiAPI');
 const Story = require('../models/Story');
 const User = require('../models/User');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
-
-const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
 // @desc    Generate story with AI
 // @route   POST /api/v1/ai/generate
@@ -21,39 +19,20 @@ exports.generateStory = asyncHandler(async (req, res, next) => {
 
   try {
     // Generate story using Hugging Face
-    const response = await hf.textGeneration({
-      model: 'mistralai/Mistral-7B-Instruct-v0.2',
-      inputs: fullPrompt,
-      parameters: {
-        max_new_tokens: getMaxTokens(length),
-        temperature: 0.8,
-        top_p: 0.95,
-        return_full_text: false
-      }
-    });
-
-    const generatedContent = response.generated_text.trim();
+    const generatedContent = await generateText(fullPrompt, getMaxTokens(length), 0.8);
+    const trimmedContent = String(generatedContent).trim();
 
     // Generate a title from the content
     const titlePrompt = `Generate only a short, catchy title (maximum 10 words) for this story:\n${generatedContent.substring(0, 500)}\n\nTitle:`;
     
-    const titleResponse = await hf.textGeneration({
-      model: 'mistralai/Mistral-7B-Instruct-v0.2',
-      inputs: titlePrompt,
-      parameters: {
-        max_new_tokens: 20,
-        temperature: 0.7,
-        return_full_text: false
-      }
-    });
-
-    const generatedTitle = titleResponse.generated_text.trim().replace(/["']/g, '').split('\n')[0];
+    const generatedTitle = await generateText(titlePrompt, 20, 0.7);
+    const finalTitle = String(generatedTitle).trim().replace(/['"]/g, '').split('\n')[0];
 
     // Create the story
     const story = await Story.create({
-      title: generatedTitle,
-      description: generatedContent.substring(0, 300) + '...',
-      content: generatedContent,
+      title: finalTitle,
+      description: trimmedContent.substring(0, 300) + '...',
+      content: trimmedContent,
       genre: genre || 'other',
       author: req.user.id,
       isAIGenerated: true,
@@ -113,18 +92,11 @@ exports.enhanceStory = asyncHandler(async (req, res, next) => {
   }
 
   try {
-    const response = await hf.textGeneration({
-      model: 'mistralai/Mistral-7B-Instruct-v0.2',
-      inputs: systemPrompt + story.content,
-      parameters: {
-        max_new_tokens: enhancementType === 'summarize' ? 500 : 2000,
-        temperature: 0.7,
-        top_p: 0.95,
-        return_full_text: false
-      }
-    });
-
-    const enhancedContent = response.generated_text.trim();
+    const enhancedContent = await generateText(
+      systemPrompt + story.content,
+      enhancementType === 'summarize' ? 500 : 2000,
+      0.7
+    );
 
     res.status(200).json({
       success: true,
@@ -148,18 +120,7 @@ exports.generateIdeas = asyncHandler(async (req, res, next) => {
   const prompt = `Generate ${count} creative story ideas for ${genre || 'any'} genre${theme ? ` with the theme of ${theme}` : ''}. For each idea, provide a title and a brief one-sentence description. Format as a numbered list.\n\nIdeas:`;
 
   try {
-    const response = await hf.textGeneration({
-      model: 'mistralai/Mistral-7B-Instruct-v0.2',
-      inputs: prompt,
-      parameters: {
-        max_new_tokens: 1000,
-        temperature: 0.9,
-        top_p: 0.95,
-        return_full_text: false
-      }
-    });
-
-    const ideas = response.generated_text.trim();
+    const ideas = await generateText(prompt, 1000, 0.9);
 
     res.status(200).json({
       success: true,

@@ -26,7 +26,7 @@ const VehicleSchema = new mongoose.Schema({
   specifications: {
     // Engine
     engine: {
-      type: String,
+      type: { type: String },  // Use object notation for 'type' field
       displacement: Number,
       cylinders: Number,
       horsepower: Number,
@@ -80,7 +80,7 @@ const VehicleSchema = new mongoose.Schema({
 
     // Transmission
     transmission: {
-      type: String,
+      type: { type: String },  // Use object notation for 'type' field
       gears: Number,
       driveType: String
     },
