@@ -39,3 +39,6 @@ logs/
 # Cache
 .cache/
 .eslintcache
+
+# MongoDB Installation
+mongodb-macos-*/
