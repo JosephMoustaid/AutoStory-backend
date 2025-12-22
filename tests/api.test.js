@@ -1,5 +1,12 @@
 const request = require('supertest');
+const mongoose = require('mongoose');
 const app = require('../src/server');
+const User = require('../src/models/User');
+
+// Close database connection after all tests
+afterAll(async () => {
+  await mongoose.connection.close();
+});
 
 describe('API Health Check', () => {
   it('should return 200 OK for health endpoint', async () => {
@@ -10,10 +17,22 @@ describe('API Health Check', () => {
 });
 
 describe('Auth Endpoints', () => {
+  const testEmail = `test${Date.now()}@example.com`;
+  
+  // Clean up test user before tests
+  beforeAll(async () => {
+    await User.deleteMany({ email: { $regex: /test.*@example\.com/ } });
+  });
+
+  // Clean up test user after tests
+  afterAll(async () => {
+    await User.deleteMany({ email: { $regex: /test.*@example\.com/ } });
+  });
+
   it('should register a new user', async () => {
     const userData = {
       name: 'Test User',
-      email: 'test@example.com',
+      email: testEmail,
       password: 'password123'
     };
 
@@ -28,7 +47,7 @@ describe('Auth Endpoints', () => {
 
   it('should login an existing user', async () => {
     const credentials = {
-      email: 'test@example.com',
+      email: testEmail,
       password: 'password123'
     };
 

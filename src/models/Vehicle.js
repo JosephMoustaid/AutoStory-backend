@@ -84,10 +84,9 @@ const VehicleSchema = new mongoose.Schema({
       gears: Number,
       driveType: String
     },
-
     // Dimensions
     dimensions: {
-      length: Number,
+     length: Number,
       width: Number,
       height: Number,
       wheelbase: Number,
