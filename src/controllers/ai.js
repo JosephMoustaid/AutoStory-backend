@@ -50,8 +50,8 @@ exports.generateStory = asyncHandler(async (req, res, next) => {
       data: story
     });
   } catch (error) {
-    console.error('Hugging Face API Error:', error);
-    return next(new ErrorResponse('Error generating story with AI. Make sure your Hugging Face API key is valid.', 500));
+    console.error('Gemini API Error:', error);
+    return next(new ErrorResponse('Error generating story with AI. Make sure your Gemini API key is valid.', 500));
   }
 });
 
@@ -106,8 +106,8 @@ exports.enhanceStory = asyncHandler(async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Hugging Face API Error:', error);
-    return next(new ErrorResponse('Error enhancing story with AI. Make sure your Hugging Face API key is valid.', 500));
+    console.error('Gemini API Error:', error);
+    return next(new ErrorResponse('Error enhancing story with AI. Make sure your Gemini API key is valid.', 500));
   }
 });
 
@@ -127,8 +127,8 @@ exports.generateIdeas = asyncHandler(async (req, res, next) => {
       data: { ideas }
     });
   } catch (error) {
-    console.error('Hugging Face API Error:', error);
-    return next(new ErrorResponse('Error generating story ideas. Make sure your Hugging Face API key is valid.', 500));
+    console.error('Gemini API Error:', error);
+    return next(new ErrorResponse('Error generating story ideas. Make sure your Gemini API key is valid.', 500));
   }
 });
 

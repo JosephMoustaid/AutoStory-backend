@@ -1,7 +1,7 @@
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const MOCK_MODE = process.env.AI_MOCK_MODE !== 'false'; // Default to mock mode unless explicitly disabled
-// Use the router-style model id per Google AI Studio naming
-const MODEL_NAME = 'models/gemini-flash-latest';
+// Read model name from environment, fallback to default
+const MODEL_NAME = process.env.MODEL_NAME || 'models/gemini-flash-latest';
 
 // Initialize Gemini only if we have a key and not in mock mode
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -75,6 +75,7 @@ async function generateText(prompt, maxTokens = 300, temperature = 0.7) {
   }
 
   try {
+    console.log(`🤖 Generating with Gemini model: ${MODEL_NAME}`);
     // Get the generative model
     const model = genAI.getGenerativeModel({ 
       model: MODEL_NAME,
@@ -89,9 +90,10 @@ async function generateText(prompt, maxTokens = 300, temperature = 0.7) {
     const response = await result.response;
     const text = response.text();
 
+    console.log(`✅ Gemini generation successful (${text.length} chars)`);
     return text || '';
   } catch (error) {
-    console.error('Gemini API Error:', error);
+    console.error('Gemini API Error:', error.message);
     
     // Fallback to mock mode on API errors
     console.warn('⚠️  Gemini API failed, falling back to mock mode');

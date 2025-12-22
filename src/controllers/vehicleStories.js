@@ -30,12 +30,36 @@ exports.generateStory = asyncHandler(async (req, res, next) => {
       chapters: chapters || ['overview', 'performance', 'technology', 'safety', 'experience']
     });
 
-    // Create story
+    // Determine vehicle type from tags or make assumptions
+    let vehicleType = 'sedan'; // default
+    if (vehicle.tags) {
+      const tagLower = vehicle.tags.map(t => t.toLowerCase());
+      if (tagLower.includes('suv')) vehicleType = 'suv';
+      else if (tagLower.includes('truck')) vehicleType = 'truck';
+      else if (tagLower.includes('sports')) vehicleType = 'sports';
+      else if (tagLower.includes('electric')) vehicleType = 'electric';
+      else if (tagLower.includes('hybrid')) vehicleType = 'hybrid';
+      else if (tagLower.includes('luxury')) vehicleType = 'luxury';
+      else if (tagLower.includes('compact')) vehicleType = 'compact';
+      else if (tagLower.includes('convertible')) vehicleType = 'convertible';
+    }
+
+    // Create story with all required fields
     const story = await VehicleStory.create({
       vehicle: vehicleId,
+      vehicleId: vehicleId,
+      manufacturer: vehicle.make,
+      model: vehicle.model,
+      year: vehicle.year,
+      vehicleType: vehicleType,
       author: req.user.id,
       title: narrative.title,
       subtitle: narrative.subtitle,
+      narrative: {
+        title: narrative.title,
+        subtitle: narrative.subtitle,
+        chapters: narrative.chapters
+      },
       chapters: narrative.chapters,
       tone,
       language,
@@ -56,7 +80,7 @@ exports.generateStory = asyncHandler(async (req, res, next) => {
     });
   } catch (error) {
     console.error('Story Generation Error:', error);
-    return next(new ErrorResponse('Error generating story. Check if Hugging Face API key is configured.', 500));
+    return next(new ErrorResponse('Error generating story. Check if Gemini API key is configured.', 500));
   }
 });
 

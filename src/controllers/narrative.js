@@ -91,7 +91,7 @@ exports.generateNarrative = asyncHandler(async (req, res, next) => {
     vehicleStory.processing.status = 'error';
     vehicleStory.processing.errorMessage = 'Failed to generate narrative';
     await vehicleStory.save();
-    return next(new ErrorResponse('Error generating narrative. Please check your Hugging Face API key.', 500));
+    return next(new ErrorResponse('Error generating narrative. Please check your Gemini API key.', 500));
   }
 });
 
