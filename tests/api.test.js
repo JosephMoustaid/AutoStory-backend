@@ -3,9 +3,16 @@ const mongoose = require('mongoose');
 const app = require('../src/server');
 const User = require('../src/models/User');
 
-// Close database connection after all tests
+// Close database connection and server after all tests
 afterAll(async () => {
+  // Close all mongoose connections
   await mongoose.connection.close();
+  
+  // Close all active connections to force Jest to exit
+  await new Promise((resolve) => {
+    // Give a small delay to ensure all async operations complete
+    setTimeout(resolve, 500);
+  });
 });
 
 describe('API Health Check', () => {
