@@ -17,28 +17,26 @@ describe('API Health Check', () => {
 });
 
 describe('Auth Endpoints', () => {
-  const testEmail = `test${Date.now()}@example.com`;
+  let testUser = {
+    name: 'Test User',
+    email: `test${Date.now()}@example.com`,
+    password: 'password123'
+  };
   
-  // Clean up test user before tests
+  // Clean up test users before tests
   beforeAll(async () => {
     await User.deleteMany({ email: { $regex: /test.*@example\.com/ } });
   });
 
-  // Clean up test user after tests
+  // Clean up test users after tests
   afterAll(async () => {
     await User.deleteMany({ email: { $regex: /test.*@example\.com/ } });
   });
 
   it('should register a new user', async () => {
-    const userData = {
-      name: 'Test User',
-      email: testEmail,
-      password: 'password123'
-    };
-
     const response = await request(app)
       .post('/api/v1/auth/register')
-      .send(userData);
+      .send(testUser);
 
     expect(response.status).toBe(201);
     expect(response.body.success).toBe(true);
@@ -47,8 +45,8 @@ describe('Auth Endpoints', () => {
 
   it('should login an existing user', async () => {
     const credentials = {
-      email: testEmail,
-      password: 'password123'
+      email: testUser.email,
+      password: testUser.password
     };
 
     const response = await request(app)
