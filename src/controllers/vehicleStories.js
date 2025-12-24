@@ -4,6 +4,7 @@ const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const { generateNarrative } = require('../services/narrativeEngine');
 const { generateVisuals } = require('../services/visualGenerator');
+const videoGenerator = require('../services/videoGenerator');
 
 // @desc    Generate vehicle story
 // @route   POST /api/v1/stories/generate
@@ -96,7 +97,6 @@ exports.getStories = asyncHandler(async (req, res, next) => {
 // @access  Public
 exports.getStory = asyncHandler(async (req, res, next) => {
   const story = await VehicleStory.findById(req.params.id)
-    .populate('vehicle')
     .populate('author', 'name email');
 
   if (!story) {
@@ -206,7 +206,7 @@ exports.publishStory = asyncHandler(async (req, res, next) => {
 // @access  Private
 exports.exportStory = asyncHandler(async (req, res, next) => {
   const { format } = req.params;
-  const story = await VehicleStory.findById(req.params.id).populate('vehicle');
+  const story = await VehicleStory.findById(req.params.id);
 
   if (!story) {
     return next(
@@ -236,7 +236,7 @@ exports.exportStory = asyncHandler(async (req, res, next) => {
         exportData = { message: 'PDF generation coming soon', story: story.title };
         break;
       case 'video':
-        exportData = { message: 'Video generation coming soon', story: story.title };
+        exportData = await videoGenerator.generateVideo(story);
         break;
     }
 

@@ -23,6 +23,7 @@ const auth = require('./routes/auth');
 const vehicles = require('./routes/vehicles');
 const vehicleStories = require('./routes/vehicleStories');
 const users = require('./routes/users');
+const exportRoutes = require('./routes/export');
 
 // Middleware
 const errorHandler = require('./middleware/error');
@@ -70,11 +71,15 @@ app.use(cors({
 // Compression middleware
 app.use(compression());
 
+// Serve static files from exports directory
+app.use('/exports', express.static(path.join(__dirname, '..', 'exports')));
+
 // Mount routers
 app.use('/api/v1/auth', auth);
 app.use('/api/v1/vehicles', vehicles);
 app.use('/api/v1/stories', vehicleStories);
 app.use('/api/v1/users', users);
+app.use('/api/v1/export', exportRoutes);
 
 // Health check endpoint
 app.get('/api/v1/health', (req, res) => {

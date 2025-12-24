@@ -19,7 +19,6 @@ router
   .route('/')
   .get(
     advancedResults(VehicleStory, [
-      { path: 'vehicle', select: 'make model year type' },
       { path: 'author', select: 'name email' }
     ]),
     getStories
