@@ -10,7 +10,8 @@ const fs = require('fs').promises;
 // @route   POST /api/v1/export/:vehicleId/pdf
 // @access  Private
 exports.exportAsPDF = asyncHandler(async (req, res, next) => {
-  const vehicleStory = await VehicleStory.findById(req.params.vehicleId);
+  // Find story by vehicle ID (not by story ID)
+  const vehicleStory = await VehicleStory.findOne({ vehicleId: req.params.vehicleId });
 
   if (!vehicleStory) {
     return next(

@@ -35,23 +35,42 @@ class VideoGenerator {
   async fetchVehicleImages(story) {
     try {
       const query = `${story.manufacturer} ${story.model} ${story.year}`;
-      console.log(`🔍 Fetching real car images for: ${query}`);
+      console.log(`🔍 Fetching specific car images for: ${query}`);
       
-      // Use multiple high-quality car image sources
-      const imageUrls = [
-        // Pexels free car images
-        'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=1920',
-        'https://images.pexels.com/photos/3802510/pexels-photo-3802510.jpeg?auto=compress&cs=tinysrgb&w=1920',
-        'https://images.pexels.com/photos/1592384/pexels-photo-1592384.jpeg?auto=compress&cs=tinysrgb&w=1920',
-        'https://images.pexels.com/photos/210019/pexels-photo-210019.jpeg?auto=compress&cs=tinysrgb&w=1920',
-      ];
+      const pexelsKey = process.env.PEXELS_API_KEY || 'gYDoP4j3HMhrzVqNieR95iKA4qH0iy4QOCGUdGlrUjT2aBkgR6YfqkNH';
       
-      console.log(`✅ Found ${imageUrls.length} car images`);
-      return imageUrls;
+      try {
+        // Try Pexels API for specific car
+        const response = await axios.get('https://api.pexels.com/v1/search', {
+          headers: { 'Authorization': pexelsKey },
+          params: {
+            query: query,
+            per_page: 4,
+            orientation: 'landscape'
+          },
+          timeout: 10000
+        });
+        
+        if (response.data.photos && response.data.photos.length > 0) {
+          const firstImage = response.data.photos[0].src.large2x || response.data.photos[0].src.large;
+          console.log(`✅ Found images of ${query} from Pexels - using SAME image for consistency`);
+          // Use the SAME image 4 times to ensure the car looks identical throughout the video
+          return [firstImage, firstImage, firstImage, firstImage];
+        }
+      } catch (apiError) {
+        console.log('⚠️  Pexels API failed:', apiError.message);
+      }
+      
+      // Fallback: Use same generic image for consistency
+      console.log(`⚠️  Using generic car image (consistent across video)`);
+      const fallbackImage = 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=1920';
+      return [fallbackImage, fallbackImage, fallbackImage, fallbackImage];
       
     } catch (error) {
       console.error('Error fetching images:', error);
-      return [];
+      // Return same image 4 times for consistency
+      const fallbackImage = 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=1920';
+      return [fallbackImage, fallbackImage, fallbackImage, fallbackImage];
     }
   }
 

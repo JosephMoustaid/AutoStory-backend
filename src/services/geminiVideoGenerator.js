@@ -38,30 +38,69 @@ class GeminiVideoGenerator {
   async fetchVehicleImages(story) {
     try {
       const query = `${story.manufacturer} ${story.model} ${story.year}`;
-      console.log(`🔍 Searching for images: "${query}"`);
+      console.log(`🔍 Searching for specific car images: "${query}"`);
       
-      // Use Pexels API (free, better reliability)
-      const pexelsKey = 'YOUR_PEXELS_KEY'; // Optional: get from env
+      const pexelsKey = process.env.PEXELS_API_KEY || 'gYDoP4j3HMhrzVqNieR95iKA4qH0iy4QOCGUdGlrUjT2aBkgR6YfqkNH';
       
-      // Multiple fallback image sources
-      const imageUrls = [
-        // High-quality car images from various free sources
-        `https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=1920`,
-        `https://images.pexels.com/photos/3802510/pexels-photo-3802510.jpeg?auto=compress&cs=tinysrgb&w=1920`,
-        `https://images.pexels.com/photos/1592384/pexels-photo-1592384.jpeg?auto=compress&cs=tinysrgb&w=1920`,
-      ];
+      try {
+        // Try Pexels API first for specific car
+        const response = await axios.get('https://api.pexels.com/v1/search', {
+          headers: { 'Authorization': pexelsKey },
+          params: {
+            query: query,
+            per_page: 3,
+            orientation: 'landscape'
+          },
+          timeout: 10000
+        });
+        
+        if (response.data.photos && response.data.photos.length > 0) {
+          const firstImage = response.data.photos[0].src.large2x || response.data.photos[0].src.large;
+          console.log(`✅ Found images of ${query} - using SAME image for all clips (consistency)`);
+          // CRITICAL: Use the SAME image 3 times to ensure vehicle looks identical in all clips
+          return [firstImage, firstImage, firstImage];
+        }
+      } catch (apiError) {
+        console.log('⚠️  Pexels API failed, trying Unsplash...');
+      }
       
-      console.log(`✅ Using ${imageUrls.length} high-quality image sources`);
-      return imageUrls;
+      // Fallback to Unsplash API
+      try {
+        const unsplashKey = process.env.UNSPLASH_API_KEY || 'YOUR_UNSPLASH_KEY';
+        const unsplashQuery = `${story.manufacturer} ${story.model}`;
+        const response = await axios.get('https://api.unsplash.com/search/photos', {
+          headers: { 'Authorization': `Client-ID ${unsplashKey}` },
+          params: {
+            query: unsplashQuery,
+            per_page: 3,
+            orientation: 'landscape'
+          },
+          timeout: 10000
+        });
+        
+        if (response.data.results && response.data.results.length > 0) {
+          const firstImage = response.data.results[0].urls.regular;
+          console.log(`✅ Found images from Unsplash - using SAME image for all clips (consistency)`);
+          // CRITICAL: Use the SAME image 3 times to ensure vehicle looks identical in all clips
+          return [firstImage, firstImage, firstImage];
+        }
+      } catch (unsplashError) {
+        console.log('⚠️  Unsplash API failed, using generic car images...');
+      }
+      
+      // Last resort: Use the same generic high-quality car image multiple times
+      // This ensures CONSISTENCY - same car in all clips
+      console.log(`⚠️  Using fallback: same luxury car image for all clips (ensures consistency)`);
+      const fallbackImage = 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=1920';
+      
+      // CRITICAL: Return the SAME image 3 times to ensure the car looks consistent throughout the video
+      return [fallbackImage, fallbackImage, fallbackImage];
       
     } catch (error) {
       console.error('Error fetching images:', error);
-      // Fallback to premium car stock images
-      return [
-        'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=1920',
-        'https://images.pexels.com/photos/3802510/pexels-photo-3802510.jpeg?auto=compress&cs=tinysrgb&w=1920',
-        'https://images.pexels.com/photos/1592384/pexels-photo-1592384.jpeg?auto=compress&cs=tinysrgb&w=1920',
-      ];
+      // CRITICAL: Use same image 3 times for consistency
+      const fallbackImage = 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=1920';
+      return [fallbackImage, fallbackImage, fallbackImage];
     }
   }
 

@@ -105,8 +105,11 @@ exports.getStory = asyncHandler(async (req, res, next) => {
     );
   }
 
-  // Increment view count
-  story.analytics.views += 1;
+  // Increment view count (use statistics.views, not analytics.views)
+  if (!story.statistics) {
+    story.statistics = { views: 0, shares: 0, downloads: 0 };
+  }
+  story.statistics.views += 1;
   await story.save();
 
   res.status(200).json({
