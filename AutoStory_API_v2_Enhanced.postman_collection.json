@@ -1,0 +1,560 @@
+{
+  "info": {
+    "_postman_id": "autostory-api-v2-collection",
+    "name": "AutoStory API v2.0 - Enhanced AI Platform",
+    "description": "Complete API collection with Gemini AI, Car Dataset Analytics, and Advanced Export Features",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "2.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "carId1",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "carId2",
+      "value": "2",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🏥 Health & Status",
+      "item": [
+        {
+          "name": "API Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Check if API is running"
+          }
+        },
+        {
+          "name": "Gemini Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/gemini/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["gemini", "status"]
+            },
+            "description": "Check Gemini AI service status"
+          }
+        },
+        {
+          "name": "Dataset Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dataset/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["dataset", "status"]
+            },
+            "description": "Check car dataset loading status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 Gemini AI",
+      "item": [
+        {
+          "name": "Generate Text",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"Write a compelling story about a classic sports car\",\n  \"temperature\": 0.7,\n  \"maxTokens\": 500\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gemini/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["gemini", "generate"]
+            },
+            "description": "Generate text with Gemini AI"
+          }
+        },
+        {
+          "name": "Chat with AI",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('sessionId', response.data.sessionId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"What makes a good sports car?\",\n  \"sessionId\": \"{{sessionId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gemini/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["gemini", "chat"]
+            },
+            "description": "Have a conversation with Gemini AI"
+          }
+        },
+        {
+          "name": "Generate Car Story",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carId\": \"{{carId1}}\",\n  \"tone\": \"enthusiastic\",\n  \"length\": \"medium\",\n  \"focus\": \"performance\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gemini/car-story",
+              "host": ["{{baseUrl}}"],
+              "path": ["gemini", "car-story"]
+            },
+            "description": "Generate AI story from car dataset"
+          }
+        },
+        {
+          "name": "Compare Cars with AI",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carIds\": [\"{{carId1}}\", \"{{carId2}}\"],\n  \"criteria\": [\"performance\", \"efficiency\", \"design\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gemini/compare-cars",
+              "host": ["{{baseUrl}}"],
+              "path": ["gemini", "compare-cars"]
+            },
+            "description": "AI-powered car comparison"
+          }
+        },
+        {
+          "name": "Get AI Recommendations",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preferences\": {\n    \"budget\": \"moderate\",\n    \"useCase\": \"daily commute\",\n    \"priorities\": [\"efficiency\", \"reliability\"],\n    \"bodyType\": \"sedan\"\n  },\n  \"filters\": {\n    \"yearFrom\": 2000,\n    \"make\": \"Toyota\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gemini/recommend",
+              "host": ["{{baseUrl}}"],
+              "path": ["gemini", "recommend"]
+            },
+            "description": "Get AI-powered car recommendations"
+          }
+        },
+        {
+          "name": "Explain Specifications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carId\": \"{{carId1}}\",\n  \"audienceLevel\": \"beginner\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gemini/explain-specs",
+              "host": ["{{baseUrl}}"],
+              "path": ["gemini", "explain-specs"]
+            },
+            "description": "Explain car specs in simple terms"
+          }
+        },
+        {
+          "name": "Generate Timeline",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"make\": \"Ford\",\n  \"model\": \"Mustang\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gemini/timeline",
+              "host": ["{{baseUrl}}"],
+              "path": ["gemini", "timeline"]
+            },
+            "description": "Generate historical timeline for a make/model"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Car Dataset",
+      "item": [
+        {
+          "name": "Search Cars",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dataset/search?query=mustang&yearFrom=1990&yearTo=2000&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["dataset", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "mustang"
+                },
+                {
+                  "key": "yearFrom",
+                  "value": "1990"
+                },
+                {
+                  "key": "yearTo",
+                  "value": "2000"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Search cars with filters"
+          }
+        },
+        {
+          "name": "Get Car by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dataset/cars/{{carId1}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["dataset", "cars", "{{carId1}}"]
+            },
+            "description": "Get detailed car information"
+          }
+        },
+        {
+          "name": "Get Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dataset/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["dataset", "analytics"]
+            },
+            "description": "Get dataset statistics"
+          }
+        },
+        {
+          "name": "Get Top Cars",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dataset/top?criteria=horsepower&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["dataset", "top"],
+              "query": [
+                {
+                  "key": "criteria",
+                  "value": "horsepower",
+                  "description": "Options: horsepower, speed, acceleration, efficient"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get top cars by criteria"
+          }
+        },
+        {
+          "name": "Get Cars by Decade",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dataset/decades",
+              "host": ["{{baseUrl}}"],
+              "path": ["dataset", "decades"]
+            },
+            "description": "Get cars grouped by decade with stats"
+          }
+        },
+        {
+          "name": "Get All Makes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dataset/makes",
+              "host": ["{{baseUrl}}"],
+              "path": ["dataset", "makes"]
+            },
+            "description": "Get list of all car manufacturers"
+          }
+        },
+        {
+          "name": "Get Make Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dataset/makes/Ford",
+              "host": ["{{baseUrl}}"],
+              "path": ["dataset", "makes", "Ford"]
+            },
+            "description": "Get detailed statistics for a specific make"
+          }
+        },
+        {
+          "name": "Get Random Cars",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dataset/random?count=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["dataset", "random"],
+              "query": [
+                {
+                  "key": "count",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Get random cars from dataset"
+          }
+        },
+        {
+          "name": "Compare Cars (Data Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carIds\": [\"{{carId1}}\", \"{{carId2}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/dataset/compare",
+              "host": ["{{baseUrl}}"],
+              "path": ["dataset", "compare"]
+            },
+            "description": "Compare cars with structured data"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📤 Enhanced Export",
+      "item": [
+        {
+          "name": "Generate Comparison Report (HTML)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carIds\": [\"{{carId1}}\", \"{{carId2}}\"],\n  \"format\": \"html\",\n  \"criteria\": [\"performance\", \"efficiency\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/export/comparison-report",
+              "host": ["{{baseUrl}}"],
+              "path": ["export", "comparison-report"]
+            },
+            "description": "Generate beautiful HTML comparison report with AI insights"
+          }
+        },
+        {
+          "name": "Generate Comparison Report (PDF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carIds\": [\"{{carId1}}\", \"{{carId2}}\"],\n  \"format\": \"pdf\",\n  \"criteria\": [\"performance\", \"design\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/export/comparison-report",
+              "host": ["{{baseUrl}}"],
+              "path": ["export", "comparison-report"]
+            },
+            "description": "Generate PDF comparison report"
+          }
+        },
+        {
+          "name": "Export as Markdown",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carIds\": [\"{{carId1}}\", \"{{carId2}}\"],\n  \"title\": \"Car Comparison Report\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/export/markdown",
+              "host": ["{{baseUrl}}"],
+              "path": ["export", "markdown"]
+            },
+            "description": "Export as markdown document"
+          }
+        },
+        {
+          "name": "Export as JSON",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carIds\": [\"{{carId1}}\", \"{{carId2}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/export/json",
+              "host": ["{{baseUrl}}"],
+              "path": ["export", "json"]
+            },
+            "description": "Export as JSON file"
+          }
+        },
+        {
+          "name": "Download Exported File",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/export/download/report_1234567890.html",
+              "host": ["{{baseUrl}}"],
+              "path": ["export", "download", "report_1234567890.html"]
+            },
+            "description": "Download any exported file"
+          }
+        }
+      ]
+    }
+  ]
+}

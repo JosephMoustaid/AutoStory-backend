@@ -1,0 +1,443 @@
+const puppeteer = require('puppeteer');
+const fs = require('fs').promises;
+const path = require('path');
+const geminiService = require('./geminiService');
+const carDatasetService = require('./carDatasetService');
+
+class EnhancedExportService {
+  constructor() {
+    this.exportsDir = path.join(__dirname, '../../exports');
+    this.ensureExportsDir();
+  }
+
+  async ensureExportsDir() {
+    try {
+      await fs.mkdir(this.exportsDir, { recursive: true });
+    } catch (error) {
+      console.error('Error creating exports directory:', error);
+    }
+  }
+
+  /**
+   * Generate beautiful HTML report with AI insights
+   */
+  async generateHTMLReport(data, options = {}) {
+    const {
+      title = 'AutoStory Report',
+      includeAIInsights = true,
+      theme = 'modern'
+    } = options;
+
+    let aiInsights = '';
+    if (includeAIInsights && data.cars) {
+      try {
+        const insightsPrompt = `Provide key insights about these vehicles:\n${JSON.stringify(data.cars, null, 2)}`;
+        aiInsights = await geminiService.generateText(insightsPrompt, { maxTokens: 500 });
+      } catch (error) {
+        console.error('Failed to generate AI insights:', error);
+      }
+    }
+
+    const html = this.buildHTMLTemplate(title, data, aiInsights, theme);
+    
+    const filename = `report_${Date.now()}.html`;
+    const filepath = path.join(this.exportsDir, filename);
+    
+    await fs.writeFile(filepath, html, 'utf-8');
+    
+    return {
+      filename,
+      filepath,
+      url: `/exports/${filename}`
+    };
+  }
+
+  /**
+   * Generate PDF from HTML using Puppeteer
+   */
+  async generatePDF(htmlContent, options = {}) {
+    const {
+      format = 'A4',
+      landscape = false,
+      printBackground = true
+    } = options;
+
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    try {
+      const page = await browser.newPage();
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      
+      const filename = `report_${Date.now()}.pdf`;
+      const filepath = path.join(this.exportsDir, filename);
+      
+      await page.pdf({
+        path: filepath,
+        format,
+        landscape,
+        printBackground,
+        margin: {
+          top: '20mm',
+          right: '15mm',
+          bottom: '20mm',
+          left: '15mm'
+        }
+      });
+
+      return {
+        filename,
+        filepath,
+        url: `/exports/${filename}`
+      };
+    } finally {
+      await browser.close();
+    }
+  }
+
+  /**
+   * Generate comprehensive car comparison report
+   */
+  async generateComparisonReport(carIds, options = {}) {
+    if (!carDatasetService.loaded) {
+      await carDatasetService.loadDataset();
+    }
+
+    const cars = carIds.map(id => carDatasetService.getById(id)).filter(Boolean);
+    
+    if (cars.length < 2) {
+      throw new Error('Need at least 2 cars for comparison');
+    }
+
+    // Generate AI comparison
+    const aiComparison = await geminiService.compareCards(cars, options.criteria || []);
+
+    const data = {
+      title: 'Vehicle Comparison Report',
+      cars: cars.map(c => ({
+        make: c.Make,
+        model: c.Model,
+        year: c.YearFrom,
+        specs: {
+          engine: c.Engine,
+          performance: c.Performance,
+          dimensions: c.Dimensions
+        }
+      })),
+      comparison: aiComparison,
+      generatedAt: new Date().toISOString()
+    };
+
+    return await this.generateHTMLReport(data, {
+      title: 'Vehicle Comparison Report',
+      includeAIInsights: true,
+      theme: 'comparison'
+    });
+  }
+
+  /**
+   * Generate markdown export
+   */
+  async generateMarkdown(data, title = 'AutoStory Report') {
+    let markdown = `# ${title}\n\n`;
+    markdown += `*Generated on ${new Date().toLocaleString()}*\n\n`;
+    markdown += `---\n\n`;
+
+    if (data.cars && Array.isArray(data.cars)) {
+      markdown += `## Vehicles\n\n`;
+      
+      data.cars.forEach((car, index) => {
+        markdown += `### ${index + 1}. ${car.Make} ${car.Model}\n\n`;
+        markdown += `- **Year**: ${car.YearFrom || 'N/A'}\n`;
+        markdown += `- **Body Type**: ${car.BodyType || 'N/A'}\n`;
+        
+        if (car.Engine) {
+          markdown += `- **Engine**: ${car.Engine.Horsepower || 'N/A'} HP, ${car.Engine.Capacity || 'N/A'} cc\n`;
+        }
+        
+        if (car.Performance) {
+          markdown += `- **Performance**: 0-100 km/h in ${car.Performance.Acceleration0_100 || 'N/A'}s, Top Speed ${car.Performance.MaxSpeed || 'N/A'} km/h\n`;
+        }
+        
+        markdown += `\n`;
+      });
+    }
+
+    if (data.comparison) {
+      markdown += `## AI Analysis\n\n`;
+      markdown += data.comparison;
+      markdown += `\n\n`;
+    }
+
+    if (data.insights) {
+      markdown += `## Key Insights\n\n`;
+      markdown += data.insights;
+      markdown += `\n\n`;
+    }
+
+    markdown += `---\n\n`;
+    markdown += `*Generated by AutoStory API - Immersive Technical Storytelling*\n`;
+
+    const filename = `report_${Date.now()}.md`;
+    const filepath = path.join(this.exportsDir, filename);
+    
+    await fs.writeFile(filepath, markdown, 'utf-8');
+    
+    return {
+      filename,
+      filepath,
+      url: `/exports/${filename}`,
+      content: markdown
+    };
+  }
+
+  /**
+   * Build HTML template
+   */
+  buildHTMLTemplate(title, data, aiInsights, theme) {
+    const css = this.getThemeCSS(theme);
+    
+    let carsHTML = '';
+    if (data.cars && Array.isArray(data.cars)) {
+      carsHTML = data.cars.map((car, index) => `
+        <div class="car-card">
+          <h3>${index + 1}. ${car.Make} ${car.Model}</h3>
+          <div class="car-specs">
+            <p><strong>Year:</strong> ${car.YearFrom || car.year || 'N/A'}</p>
+            <p><strong>Body Type:</strong> ${car.BodyType || car.bodyType || 'N/A'}</p>
+            ${car.Engine || car.specs?.engine ? `
+              <div class="spec-section">
+                <h4>Engine</h4>
+                <p>Power: ${car.Engine?.Horsepower || car.specs?.engine?.horsepower || 'N/A'} HP</p>
+                <p>Capacity: ${car.Engine?.Capacity || car.specs?.engine?.capacity || 'N/A'} cc</p>
+                <p>Torque: ${car.Engine?.MaxTorque || car.specs?.engine?.torque || 'N/A'} Nm</p>
+              </div>
+            ` : ''}
+            ${car.Performance || car.specs?.performance ? `
+              <div class="spec-section">
+                <h4>Performance</h4>
+                <p>0-100 km/h: ${car.Performance?.Acceleration0_100 || car.specs?.performance?.acceleration || 'N/A'}s</p>
+                <p>Top Speed: ${car.Performance?.MaxSpeed || car.specs?.performance?.maxSpeed || 'N/A'} km/h</p>
+                <p>Fuel Consumption: ${car.Performance?.MixedFuelConsumption || car.specs?.performance?.fuelConsumption || 'N/A'} L/100km</p>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <style>${css}</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>${title}</h1>
+      <p class="subtitle">Generated by AutoStory API</p>
+      <p class="date">${new Date().toLocaleString()}</p>
+    </header>
+
+    <main>
+      ${carsHTML ? `
+        <section class="vehicles-section">
+          <h2>Vehicles</h2>
+          ${carsHTML}
+        </section>
+      ` : ''}
+
+      ${data.comparison ? `
+        <section class="analysis-section">
+          <h2>AI Analysis</h2>
+          <div class="analysis-content">
+            ${data.comparison.split('\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
+          </div>
+        </section>
+      ` : ''}
+
+      ${aiInsights ? `
+        <section class="insights-section">
+          <h2>Key Insights</h2>
+          <div class="insights-content">
+            ${aiInsights.split('\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
+          </div>
+        </section>
+      ` : ''}
+    </main>
+
+    <footer>
+      <p>&copy; ${new Date().getFullYear()} AutoStory - Immersive Technical Storytelling</p>
+    </footer>
+  </div>
+</body>
+</html>
+    `;
+  }
+
+  /**
+   * Get theme CSS
+   */
+  getThemeCSS(theme) {
+    const baseCSS = `
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        overflow: hidden;
+      }
+
+      header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        text-align: center;
+      }
+
+      header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+      }
+
+      .subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+      }
+
+      .date {
+        margin-top: 10px;
+        opacity: 0.8;
+        font-size: 0.9rem;
+      }
+
+      main {
+        padding: 40px;
+      }
+
+      section {
+        margin-bottom: 40px;
+      }
+
+      h2 {
+        color: #667eea;
+        border-bottom: 3px solid #667eea;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+      }
+
+      h3 {
+        color: #764ba2;
+        margin-bottom: 15px;
+      }
+
+      h4 {
+        color: #555;
+        margin-top: 15px;
+        margin-bottom: 10px;
+      }
+
+      .car-card {
+        background: #f8f9fa;
+        border-left: 4px solid #667eea;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+      }
+
+      .car-specs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+      }
+
+      .spec-section {
+        background: white;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+
+      .spec-section p {
+        margin: 5px 0;
+        font-size: 0.95rem;
+      }
+
+      .analysis-content,
+      .insights-content {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 5px;
+        line-height: 1.8;
+      }
+
+      .analysis-content p,
+      .insights-content p {
+        margin-bottom: 15px;
+      }
+
+      footer {
+        background: #2d3748;
+        color: white;
+        text-align: center;
+        padding: 20px;
+        font-size: 0.9rem;
+      }
+
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+
+        .container {
+          box-shadow: none;
+        }
+      }
+    `;
+
+    return baseCSS;
+  }
+
+  /**
+   * Generate JSON export
+   */
+  async generateJSON(data) {
+    const filename = `data_${Date.now()}.json`;
+    const filepath = path.join(this.exportsDir, filename);
+    
+    await fs.writeFile(filepath, JSON.stringify(data, null, 2), 'utf-8');
+    
+    return {
+      filename,
+      filepath,
+      url: `/exports/${filename}`,
+      data
+    };
+  }
+}
+
+module.exports = new EnhancedExportService();

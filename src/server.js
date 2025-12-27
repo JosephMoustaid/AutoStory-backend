@@ -18,12 +18,20 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 const connectDB = require('./config/db');
 connectDB();
 
+// Load car dataset on startup
+const carDatasetService = require('./services/carDatasetService');
+carDatasetService.loadDataset().catch(err => {
+  console.error('Failed to load car dataset:', err);
+});
+
 // Route files
 const auth = require('./routes/auth');
 const vehicles = require('./routes/vehicles');
 const vehicleStories = require('./routes/vehicleStories');
 const users = require('./routes/users');
 const exportRoutes = require('./routes/export');
+const gemini = require('./routes/gemini');
+const dataset = require('./routes/dataset');
 
 // Middleware
 const errorHandler = require('./middleware/error');
@@ -80,6 +88,8 @@ app.use('/api/v1/vehicles', vehicles);
 app.use('/api/v1/stories', vehicleStories);
 app.use('/api/v1/users', users);
 app.use('/api/v1/export', exportRoutes);
+app.use('/api/v1/gemini', gemini);
+app.use('/api/v1/dataset', dataset);
 
 // Health check endpoint
 app.get('/api/v1/health', (req, res) => {
@@ -95,14 +105,29 @@ app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Welcome to AutoStory API - Immersive Technical Storytelling for Vehicles',
-    version: '1.0.0',
-    description: 'Transform vehicle specifications into immersive storytelling experiences',
+    version: '2.0.0',
+    description: 'Transform vehicle specifications into immersive storytelling experiences with AI-powered insights',
+    features: [
+      '🤖 AI-Powered Story Generation with Gemini',
+      '📊 Historical Car Dataset (1945-2020)',
+      '🔍 Advanced Search & Analytics',
+      '💬 Interactive Chat Assistant',
+      '📈 Smart Comparisons & Recommendations',
+      '🎨 Multi-Format Export'
+    ],
     endpoints: {
       auth: '/api/v1/auth',
       vehicles: '/api/v1/vehicles',
       stories: '/api/v1/stories',
       users: '/api/v1/users',
+      gemini: '/api/v1/gemini',
+      dataset: '/api/v1/dataset',
+      export: '/api/v1/export',
       health: '/api/v1/health'
+    },
+    documentation: {
+      postman: 'See AutoStory_API.postman_collection.json',
+      guides: ['QUICKSTART.md', 'POSTMAN_GUIDE.md', 'ARCHITECTURE.md']
     }
   });
 });

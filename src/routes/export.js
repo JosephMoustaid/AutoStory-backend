@@ -4,14 +4,24 @@ const {
   exportAsMarketingDeck,
   exportAsVideo,
   generateWebLink,
-  getExportHistory
+  getExportHistory,
+  generateComparisonReport,
+  exportAsMarkdown,
+  exportAsJSON,
+  downloadFile
 } = require('../controllers/export');
 
 const router = express.Router();
 
 const { protect, authorize } = require('../middleware/auth');
 
-// All export routes require authentication
+// Public export routes (new enhanced exports)
+router.post('/comparison-report', generateComparisonReport);
+router.post('/markdown', exportAsMarkdown);
+router.post('/json', exportAsJSON);
+router.get('/download/:filename', downloadFile);
+
+// Protected export routes (legacy vehicle story exports)
 router.use(protect);
 router.use(authorize('user', 'author', 'admin'));
 
