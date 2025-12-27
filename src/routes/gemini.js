@@ -24,11 +24,11 @@ router.post('/recommend', recommendCar);
 router.post('/explain-specs', explainSpecs);
 router.post('/timeline', generateTimeline);
 router.get('/status', getStatus);
+router.post('/chat', chat);
 
 // Protected routes (require authentication)
 router.post('/generate', protect, generateText);
 router.post('/stream', protect, generateStream);
-router.post('/chat', protect, chat);
 router.delete('/chat/:sessionId', protect, clearChatSession);
 router.post('/analyze-image', protect, analyzeImage);
 

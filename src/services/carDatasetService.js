@@ -24,7 +24,7 @@ class CarDatasetService {
         .on('data', (row) => {
           // Clean and normalize data
           const car = this.normalizeCarData(row);
-          if (car.Make && car.Modle) { // Check if essential fields exist
+          if (car.Make && car.Model) { // Check if essential fields exist
             cars.push(car);
           }
         })

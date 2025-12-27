@@ -109,11 +109,22 @@ class GeminiService {
 
       if (!chatSession) {
         const model = this.genAI.getGenerativeModel({ model: this.defaultModel });
-        chatSession = model.startChat({
-          history: history.map(msg => ({
-            role: msg.role,
+        
+        // Filter and validate history - must start with 'user' role
+        let validHistory = history
+          .filter(msg => msg.role && msg.content)
+          .map(msg => ({
+            role: msg.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: msg.content }]
-          })),
+          }));
+        
+        // Ensure history starts with user role
+        if (validHistory.length > 0 && validHistory[0].role !== 'user') {
+          validHistory = validHistory.slice(1);
+        }
+        
+        chatSession = model.startChat({
+          history: validHistory,
           generationConfig: {
             temperature: 0.8,
             maxOutputTokens: 1500,
